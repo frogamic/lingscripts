@@ -12,13 +12,42 @@ def getchar():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     return ch
 
-def main():
+def getargs():
     if len(sys.argv) < 3:
         print("Usage: coder input.file output.file")
         sys.exit()
+    return sys.argv[1:3]
 
+# def openfiles(infile, outfile):
+#     files = open(infile, 'r'), open(outfile, 'w')
+#     return files
+
+def chooseheader(headers, prompt):
+    chosen = -1
+    while chosen > len(headers) or chosen <0:
+        userinput = input(prompt)
+        try:
+            chosen = int(userinput)
+# Input is a number
+        except ValueError:
+# Input is a string
+            try:
+                chosen = headers.index(userinput)
+# Selectian is an existing column
+            except ValueError:
+# Selection is a new column
+                chosen = len(headers)
+    if chosen == len(headers):
+        header = userinput
+    else:
+        header = headers[chosen]
+    return chosen, header
+                
+
+def main():
+    infile, outfile = getargs()
 # Setup csv input and output
-    with open(sys.argv[1], 'r') as csvin, open(sys.argv[2], 'w') as csvout:
+    with open(infile, 'r') as csvin, open(outfile, 'w') as csvout:
         datareader = csv.reader(csvin, delimiter = ',')
         datawriter = csv.writer(csvout, delimiter = ',')
 # Print header info
@@ -30,28 +59,14 @@ def main():
             i += 1
 
 # Ask the user for the input column
-        inputcol = -1
-        while inputcol >= len(headerrow) or inputcol < 0:
-            try:
-                userinput = int(input("Input column (number): "))
-                if userinput >= 0 and userinput < len(headerrow):
-                    inputcol = userinput
-                else:
-                    print("Invalid selection")
-            except ValueError:
+        inputcol = len(headerrow)
+        while inputcol >= len(headerrow):
+            inputcol, _ = chooseheader(headerrow, "Choose input column: ")
+            if inputcol == len(headerrow):
                 print("Invalid selection")
 
 # Ask the user for the output column
-        userinput = input("Output column (number or name): ")
-        try:
-            outputcol = int(userinput)
-            assert(outputcol >=0 and outputcol < len(headerrow))
-        except ValueError or AssertionError:
-            try:
-                outputcol = headerrow.index(userinput)
-            except ValueError:
-                outputcol = len(headerrow)
-                outputhead = userinput
+        outputcol, outputhead = chooseheader(headerrow, "Choose output column: ")
 
 # Confirm selections with the user and write header row to output file
         inputchoice = "Input column: " + headerrow[inputcol]
